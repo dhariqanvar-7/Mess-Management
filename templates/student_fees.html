@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}My Mess Fees — MessFlow{% endblock %}
+{% block section_name %}Student Mess Fees{% endblock %}
+
+{% block body %}
+<!-- HEADER & ACTIONS -->
+<div class="page-header-row">
+  <div>
+    <h1 class="page-title">My Mess Fees &amp; Billing</h1>
+    <p class="page-subtitle">View your current mess dues, standard monthly dining fee, and surcharges from your accepted additional items.</p>
+  </div>
+  <a href="{{ url_for('student_specials') }}" class="btn btn-primary">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+    Browse Additional Food Items
+  </a>
+</div>
+
+<!-- STATS SUMMARY CARDS -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Standard Base Fee</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      </div>
+    </div>
+    <div class="stat-val">₹{{ '%.0f'|format(standard_fee) }}</div>
+    <div class="stat-hint">Standard daily menu rates calculated for month</div>
+  </div>
+
+  <div class="stat-card indigo">
+    <div class="stat-header">
+      <span class="stat-label">Accepted Additionals</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+      </div>
+    </div>
+    <div class="stat-val">+₹{{ '%.0f'|format(additional_fee) }}</div>
+    <div class="stat-hint">{{ orders|length }} additional dish(es) opted</div>
+  </div>
+
+  <div class="stat-card warn">
+    <div class="stat-header">
+      <span class="stat-label">Total Fee Payable</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+      </div>
+    </div>
+    <div class="stat-val">₹{{ '%.0f'|format(total_fee) }}</div>
+    <div class="stat-hint">Base Fee (₹{{ '%.0f'|format(standard_fee) }}) + Additionals (₹{{ '%.0f'|format(additional_fee) }})</div>
+  </div>
+</div>
+
+<!-- ACCEPTED ADDITIONAL FOOD ITEMS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">My Accepted Additional Food Items</h3>
+      <p class="card-subtitle">These extra dishes have been opted by you and added to your mess dues.</p>
+    </div>
+    <span class="badge badge-indigo">{{ orders|length }} Items</span>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Dish Name</th>
+          <th>Day of Week</th>
+          <th>Meal Time</th>
+          <th>Additional Charge</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+          <tr>
+            <td><b>{{ o.dish_name }}</b></td>
+            <td><b>{{ o.day if o.day else 'Scheduled' }}</b></td>
+            <td><span class="badge badge-neutral">{{ o.meal|capitalize if o.meal else 'Special' }}</span></td>
+            <td><b>+₹{{ '%.0f'|format(o.price) }}</b></td>
+            <td>
+              {% if o.status == 'Cancel Requested' %}
+                <span class="badge-pending">⏳ Rejection Pending Admin</span>
+              {% else %}
+                <span class="badge badge-success">✓ Accepted</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('student_specials') }}" class="btn btn-secondary btn-sm">Manage</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="query-empty-state">
+              You haven't accepted any additional food items yet. Only your standard base fee applies.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BILLING SUMMARY BREAKDOWN NOTE -->
+<div class="card fee-calc-card">
+  <h3 class="card-title">Billing Calculation Summary</h3>
+  <ul class="fee-calc-list">
+    <li><b>Standard Mess Dining Fee:</b> ₹{{ '%.0f'|format(standard_fee) }} — Covers standard daily meals (Breakfast, Lunch, Snacks, Dinner) for the 7-day cyclical schedule.</li>
+    <li><b>Additional Food Charges:</b> +₹{{ '%.0f'|format(additional_fee) }} — Extra charge for {{ orders|length }} additional item(s) accepted by you.</li>
+    <li><b>Net Total Payable:</b> <b>₹{{ '%.0f'|format(total_fee) }}</b></li>
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Dining Menu Setup — MessFlow{% endblock %}
+{% block section_name %}Admin / Weekly Menu Setup{% endblock %}
+
+{% block body %}
+<!-- HEADER & ACTIONS -->
+<div class="page-header-row">
+  <div>
+    <h1 class="page-title">7-Day Regular Dining Menu</h1>
+    <p class="page-subtitle">Configure the recurring weekly standard dining menu. Every day provides wholesome, balanced hostel dining meals.</p>
+  </div>
+  
+  <div class="header-actions">
+    <a href="{{ url_for('admin_specials') }}" class="btn btn-primary">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+      Manage Additional Food Items
+    </a>
+  </div>
+</div>
+
+<!-- 7 DAYS EDIT GRID -->
+<div class="menu-grid">
+  {% for r in rows %}
+    <div class="card menu-card {{ 'today-card' if r.day == today_name else '' }}">
+      
+      <form method="post" action="{{ url_for('admin_menu') }}">
+        <input type="hidden" name="day" value="{{ r.day }}">
+        
+        <!-- CARD HEADER -->
+        <div class="menu-card-header">
+          <div class="menu-day-wrap">
+            <h2 class="menu-day-title">{{ r.day }}</h2>
+            {% if r.day == today_name %}
+              <span class="badge badge-success">Today</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- MEAL FIELDS -->
+        <div class="meal-list">
+          <div>
+            <label>🌅 Breakfast Menu</label>
+            <input type="text" name="breakfast" value="{{ r.breakfast }}" required placeholder="e.g. Idli (4 pcs), Sambar, Chutney, Coffee">
+          </div>
+
+          <div>
+            <label>☀️ Lunch Menu</label>
+            <input type="text" name="lunch" value="{{ r.lunch }}" required placeholder="e.g. Rice, Madras Sambar, Poriyal, Curd, Appalam">
+          </div>
+
+          <div>
+            <label>☕ Evening Snacks &amp; Beverage</label>
+            <input type="text" name="snacks" value="{{ r.snacks }}" required placeholder="e.g. Masala Chai, Veg Samosa with Mint Chutney">
+          </div>
+
+          <div>
+            <label>🌙 Dinner Menu</label>
+            <input type="text" name="dinner" value="{{ r.dinner }}" required placeholder="e.g. Phulka Rotis, Dal Tadka, Paneer Gravy, Rice">
+          </div>
+
+          <!-- PRICING SECTION -->
+          <div class="menu-price-input-box">
+            <label>Daily Standard Meal Rate (₹)</label>
+            <input type="number" step="1" min="0" name="cost_veg" value="{{ '%.0f'|format(r.cost_veg) }}" required>
+            <span class="menu-price-input-hint">Baseline benchmark meal cost for {{ r.day }}.</span>
+          </div>
+        </div>
+
+        <!-- SAVE BUTTON -->
+        <button type="submit" class="btn btn-primary btn-save-menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Save {{ r.day }}'s Menu
+        </button>
+
+      </form>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Consumption & Dynamic Fee Calculation — MessFlow{% endblock %}
+{% block section_name %}Admin / Dynamic Fee Calculation Engine{% endblock %}
+
+{% block body %}
+<!-- HEADER & ACTIONS -->
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap;">
+  <div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--slate-900);">Monthly Fee Calculation &amp; Weekly Inventory Usage</h1>
+  </div>
+
+  <!-- Apply to bills button -->
+  <form method="post" action="{{ url_for('apply_consumption_to_bills') }}" onsubmit="return confirm('Apply calculated monthly consumption fee (₹{{ summary.fee_per_student_month|round|int }}) to student bills for {{ month }}?');">
+    <input type="hidden" name="month" value="{{ month }}">
+    <button type="submit" class="btn btn-primary" style="box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      Apply Calculated Costs to Student Bills
+    </button>
+  </form>
+</div>
+
+<!-- MONTH FILTER BAR -->
+<div class="card" style="padding: 16px 22px; margin-bottom: 24px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+    <form method="get" action="{{ url_for('admin_consumption') }}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <span style="font-size: 13.5px; font-weight: 700; color: var(--slate-700);">Select Month:</span>
+      <input type="month" name="month" value="{{ month }}" style="width: auto; padding: 7px 12px; font-weight: 700;">
+      <button type="submit" class="btn btn-secondary btn-sm">Load Month</button>
+      
+      <div style="display: flex; gap: 6px; margin-left: 6px;">
+        {% for m_code in distinct_months[:3] %}
+          <a href="{{ url_for('admin_consumption', month=m_code) }}" class="badge {{ 'badge-indigo' if m_code == month else 'badge-neutral' }}" style="text-decoration: none; padding: 5px 10px; font-size: 11.5px;">
+            {{ m_code }}
+          </a>
+        {% endfor %}
+      </div>
+    </form>
+
+    <div style="font-size: 13px; color: var(--slate-500);">
+      Active Billing Month: <b style="color: var(--slate-900);">{{ summary.month_label }}</b> ({{ summary.days_in_month }} Days in Month)
+    </div>
+  </div>
+</div>
+
+<!-- DYNAMIC CALCULATION BREAKDOWN FORMULA -->
+<div class="stats-grid">
+  <!-- 1. TOTAL MONTH CONSUMPTION -->
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">1. Total Monthly Food Cost</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      </div>
+    </div>
+    <div class="stat-val">₹{{ '%.0f'|format(summary.total_cost) }}</div>
+    <div class="stat-hint">Sum of all weekly inventory consumption logs</div>
+  </div>
+
+  <!-- 2. TOTAL STUDENTS DIVISOR -->
+  <div class="stat-card indigo">
+    <div class="stat-header">
+      <span class="stat-label">2. Divided by Students</span>
+      <div class="stat-icon" style="color: var(--indigo-600);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+      </div>
+    </div>
+    <div class="stat-val" style="color: var(--indigo-600);">{{ summary.student_count }} Students</div>
+    <div class="stat-hint">Equal division across all active hostel residents</div>
+  </div>
+
+  <!-- 3. BASE FEE PER STUDENT -->
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">3. Base Fee / Student / Month</span>
+      <div class="stat-icon" style="color: var(--primary);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="stat-val" style="color: var(--primary-dark);">₹{{ '%.0f'|format(summary.fee_per_student_month) }}</div>
+    <div class="stat-hint">₹{{ '%.0f'|format(summary.total_cost) }} ÷ {{ summary.student_count }} students</div>
+  </div>
+
+  <!-- 4. PER DAY DYNAMIC AVERAGE -->
+  <div class="stat-card warn">
+    <div class="stat-header">
+      <span class="stat-label">4. Per Day Dynamic Average</span>
+      <div class="stat-icon" style="color: var(--amber-600);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+      </div>
+    </div>
+    <div class="stat-val" style="color: var(--amber-600);">₹{{ '%.2f'|format(summary.avg_per_student_day) }}/day</div>
+    <div class="stat-hint">Base Fee ÷ {{ summary.days_in_month }} days (No fixed daily rate)</div>
+  </div>
+</div>
+
+<!-- LOG NEW WEEKLY USAGE FORM -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Log Weekly Inventory Consumption</h3>
+      <p class="card-subtitle">Select the week and enter quantity used. <b>Stock is subtracted immediately from inventory.</b></p>
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('log_consumption') }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; align-items: end;">
+      <div>
+        <label>Select Week</label>
+        <select name="week" required style="font-weight: 700;">
+          <option value="1">Week 1 (Days 01 - 07)</option>
+          <option value="2">Week 2 (Days 08 - 14)</option>
+          <option value="3">Week 3 (Days 15 - 21)</option>
+          <option value="4">Week 4 (Days 22 - 28)</option>
+          <option value="5">Week 5 (Days 29 - End of Month)</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Select Inventory Item</label>
+        <select name="inventory_id" required>
+          <option value="">-- Choose Item from Stock --</option>
+          {% for inv in inventory_items %}
+            <option value="{{ inv._id }}">{{ inv.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Quantity Consumed</label>
+        <input type="number" step="any" min="0.1" name="qty_used" required placeholder="e.g. 50">
+      </div>
+
+      <div>
+        <label>Period Label (Optional)</label>
+        <input type="text" name="period" placeholder="e.g. Oct 01 - Oct 07">
+      </div>
+
+      <div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Record Usage &amp; Deduct Stock
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- WEEKS BREAKDOWN -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+  <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--slate-900);">Weekly Expense Schedule &amp; Consumption Logs</h2>
+  <span class="badge badge-neutral">{{ summary.weeks|length }} Active Weekly Logs for {{ summary.month_label }}</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 32px;">
+  {% for wk_num in [1, 2, 3, 4, 5] %}
+    {% set w_doc = summary.weeks_map.get(wk_num) %}
+    {% if w_doc or wk_num <= 4 %}
+      <div class="card" style="margin-bottom: 0; padding: 22px; display: flex; flex-direction: column;">
+        
+        <!-- WEEK CARD HEADER -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--slate-200);">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--slate-900);">Week {{ wk_num }}</h3>
+              {% if w_doc and w_doc['items'] %}
+                <span class="badge badge-success">{{ w_doc['items']|length }} items logged</span>
+              {% else %}
+                <span class="badge badge-neutral">No entries</span>
+              {% endif %}
+            </div>
+            <span style="font-size: 12px; color: var(--slate-500);">
+              {{ w_doc.period if (w_doc and w_doc.period) else 'Week ' ~ wk_num }}
+            </span>
+          </div>
+
+          <div style="text-align: right;">
+            <b style="font-size: 1.35rem; color: var(--slate-900);">
+              ₹{{ '%.0f'|format(w_doc.total_cost if w_doc else 0) }}
+            </b>
+            <div style="font-size: 11px; color: var(--slate-400);">week total</div>
+          </div>
+        </div>
+
+        <!-- ITEMS LIST -->
+        <div style="flex: 1; min-height: 120px;">
+          {% if w_doc and w_doc['items'] %}
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              {% for item in w_doc['items'] %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--slate-50); border-radius: var(--radius-sm); border: 1px solid var(--slate-100); font-size: 13px;">
+                  <div>
+                    <b style="color: var(--slate-800);">{{ item.name }}</b>
+                    <span style="color: var(--slate-500); font-size: 11.5px; margin-left: 4px;">
+                      ({{ item.qty }} {{ item.unit }} &times; ₹{{ item.unit_price }})
+                    </span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <b style="color: var(--slate-900);">₹{{ '%.0f'|format(item.cost) }}</b>
+                    <form method="post" action="{{ url_for('delete_consumption_item', cid=w_doc._id, idx=loop.index0) }}" style="display: inline;">
+                      <button type="submit" class="signout-btn" style="padding: 2px;" title="Remove item and restore to stock">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--slate-400); font-size: 13px; font-style: italic;">
+              No inventory provisions recorded for Week {{ wk_num }}.
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- WEEK CARD FOOTER -->
+        {% if w_doc and w_doc['items'] %}
+          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--slate-200); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--slate-500);">Per-student week share: <b>₹{{ '%.0f'|format(w_doc.total_cost / summary.student_count) }}</b></span>
+            <form method="post" action="{{ url_for('delete_consumption_week', cid=w_doc._id) }}" onsubmit="return confirm('Clear Week {{ wk_num }} records?');">
+              <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--rose-600); font-size: 11px; padding: 3px 8px;">
+                Clear Week
+              </button>
+            </form>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

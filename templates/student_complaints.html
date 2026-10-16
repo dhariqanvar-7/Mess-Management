@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Queries Portal — MessFlow{% endblock %}
+{% block section_name %}Queries Portal{% endblock %}
+
+{% block body %}
+<div class="auth-card-head">
+  <h1 class="page-title-sm">Mess Queries &amp; Feedback</h1>
+  <p class="page-subtitle-sm">Submit queries, menu suggestions, or quality feedback directly to the mess admin.</p>
+</div>
+
+<div class="query-grid">
+  <!-- SUBMIT QUERY FORM -->
+  <div class="card query-card">
+    <h3 class="card-title">Raise a Query</h3>
+    <form method="post">
+      <div class="auth-input-group">
+        <label>Query Category</label>
+        <select name="type" required>
+          <option value="Food quality">🍲 Food Quality &amp; Taste</option>
+          <option value="Menu">📋 Menu Recommendations</option>
+          <option value="Hygiene">🧼 Hall &amp; Kitchen Hygiene</option>
+          <option value="Portion / Timings">⏰ Meal Timings</option>
+          <option value="Other">💬 General Query</option>
+        </select>
+      </div>
+      <div class="auth-input-group">
+        <label>Description</label>
+        <textarea name="text" rows="3" required placeholder="Describe your question, concern, or meal feedback..."></textarea>
+      </div>
+      <div class="auth-btn-group">
+        <button type="submit" class="btn btn-primary w-full">Submit Query</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- QUERY HISTORY -->
+  <div>
+    <h3 class="card-title">My Query History ({{ items|length }})</h3>
+    <div class="meal-list">
+      {% for c in items %}
+        <div class="card query-card">
+          <div class="query-card-header">
+            <div class="menu-day-wrap">
+              <span class="badge {{ 'badge-success' if c.status == 'Resolved' else 'badge-warn' }}">
+                {{ '✓ Resolved' if c.status == 'Resolved' else '⏳ Open' }}
+              </span>
+              <b>{{ c.type }}</b>
+            </div>
+            <span class="query-meta-time">{{ c.created.strftime('%d %b, %I:%M %p') }}</span>
+          </div>
+          <p class="meal-desc">{{ c.text }}</p>
+          {% if c.reply %}
+            <div class="query-reply-box-sm">
+              <b>Admin Response:</b> {{ c.reply }}
+            </div>
+          {% else %}
+            <div class="query-waiting-text">Awaiting admin review...</div>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="card query-empty-state">
+          <p>No queries submitted yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

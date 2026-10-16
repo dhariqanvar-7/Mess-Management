@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dining Menu Schedule — MessFlow{% endblock %}
+{% block section_name %}Student Dining Menu{% endblock %}
+
+{% block body %}
+<!-- TOP OVERVIEW & SPECIALS BANNER -->
+<div class="page-header-row">
+  <div>
+    <h1 class="page-title">Hostel Dining Menu</h1>
+    <p class="page-subtitle">Fresh, wholesome, nutritious meals prepared daily for all residents.</p>
+  </div>
+
+  <div class="header-actions">
+    <a href="{{ url_for('student_specials') }}" class="btn btn-primary">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+      Browse Additional Food Items
+    </a>
+  </div>
+</div>
+
+<!-- STATS SUMMARY CARDS -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Estimated Baseline Mess Fee</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      </div>
+    </div>
+    <div class="stat-val">₹{{ '%.0f'|format(projected) }}</div>
+    <div class="stat-hint">Estimated standard monthly dining fee</div>
+  </div>
+
+  <div class="stat-card warn">
+    <div class="stat-header">
+      <span class="stat-label">Today's Day</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+      </div>
+    </div>
+    <div class="stat-val">{{ today_name }}</div>
+    <div class="stat-hint">Highlighted with green border below</div>
+  </div>
+
+  <div class="stat-card indigo">
+    <div class="stat-header">
+      <span class="stat-label">7-Day Recurring Cycle</span>
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      </div>
+    </div>
+    <div class="stat-val">Standard Rates</div>
+    <div class="stat-hint">Wholesome daily meals for all residents</div>
+  </div>
+</div>
+
+<!-- 7-DAY MENU CARDS -->
+<div class="menu-grid">
+  {% for r in rows %}
+    <div class="card menu-card {{ 'today-card' if r.is_today else '' }}">
+      
+      <!-- CARD HEADER -->
+      <div class="menu-card-header">
+        <div class="menu-day-wrap">
+          <h2 class="menu-day-title">{{ r.day }}</h2>
+          {% if r.is_today %}
+            <span class="badge badge-success">Today</span>
+          {% endif %}
+        </div>
+
+        <div>
+          <span class="menu-price-text">₹{{ '%.0f'|format(r.cost) }}</span>
+          <div class="menu-price-hint">base rate</div>
+        </div>
+      </div>
+
+      <!-- MEALS BREAKDOWN -->
+      <div class="meal-list">
+        
+        <!-- Breakfast -->
+        <div class="meal-slot meal-slot-breakfast">
+          <div class="meal-title-breakfast">
+            🌅 Breakfast <span class="meal-timing-hint">(7:30 - 9:30 AM)</span>
+          </div>
+          <div class="meal-desc">{{ r.breakfast }}</div>
+        </div>
+
+        <!-- Lunch -->
+        <div class="meal-slot meal-slot-lunch">
+          <div class="meal-title-lunch">
+            ☀️ Lunch <span class="meal-timing-hint">(12:30 - 2:30 PM)</span>
+          </div>
+          <div class="meal-desc">{{ r.lunch }}</div>
+        </div>
+
+        <!-- Evening Snacks -->
+        <div class="meal-slot meal-slot-snacks">
+          <div class="meal-title-snacks">
+            ☕ Evening Snacks <span class="meal-timing-hint">(5:00 - 6:00 PM)</span>
+          </div>
+          <div class="meal-desc">{{ r.snacks }}</div>
+        </div>
+
+        <!-- Dinner -->
+        <div class="meal-slot meal-slot-dinner">
+          <div class="meal-title-dinner">
+            🌙 Dinner <span class="meal-timing-hint">(7:30 - 9:30 PM)</span>
+          </div>
+          <div class="meal-desc">{{ r.dinner }}</div>
+        </div>
+
+      </div>
+
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

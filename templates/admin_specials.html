@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Additional Food Items — MessFlow{% endblock %}
+{% block section_name %}Admin / Additional Items{% endblock %}
+
+{% block body %}
+<!-- HEADER -->
+<div class="page-header-center">
+  <div>
+    <h1 class="page-title-sm">Additional Food Items &amp; Extras</h1>
+    <p class="page-subtitle-sm">Add special dishes for specific days with charges. Review student opt-ins &amp; cancellation reasons.</p>
+  </div>
+  <span class="badge badge-indigo">{{ total_specials }} Total Items Scheduled</span>
+</div>
+
+<!-- PENDING CANCELLATION REQUESTS CARD -->
+{% if cancel_reqs %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Pending Student Rejection Requests</h3>
+    <span class="badge badge-warn">{{ cancel_reqs|length }} Requests</span>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Dish Name</th>
+          <th>Day &amp; Meal</th>
+          <th>Reason for Rejection</th>
+          <th>Admin Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in cancel_reqs %}
+          <tr>
+            <td>
+              <b>{{ req.student_name if req.student_name else 'Student' }}</b>
+              <div class="query-meta-time">{{ req.roll_no if req.roll_no else '' }}</div>
+            </td>
+            <td>
+              <b>{{ req.dish_name }}</b>
+              <div class="query-meta-time">₹{{ '%.0f'|format(req.price) }}</div>
+            </td>
+            <td>
+              <b>{{ req.day }}</b>
+              <div class="query-meta-time">{{ req.meal|capitalize }}</div>
+            </td>
+            <td>
+              <div class="cancel-reason-text">{{ req.cancel_reason }}</div>
+            </td>
+            <td>
+              <div class="btn-group-sm">
+                <form method="post" action="{{ url_for('admin_cancel_decision', oid=req._id, dec='accept') }}">
+                  <button type="submit" class="btn btn-success btn-sm nowrap">Accept Reason</button>
+                </form>
+                <form method="post" action="{{ url_for('admin_cancel_decision', oid=req._id, dec='reject') }}">
+                  <button type="submit" class="btn btn-danger btn-sm nowrap">Reject Reason</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ADD NEW ITEM FORM -->
+<div class="card">
+  <h2 class="card-title">Schedule Additional Food Item</h2>
+  <form method="post" action="{{ url_for('admin_specials') }}">
+    <div class="form-grid-5">
+      <div>
+        <label>Dish Name</label>
+        <input type="text" name="dish_name" required placeholder="e.g. Chicken Dum Biryani">
+      </div>
+      <div>
+        <label>Day of the Week</label>
+        <select name="day" required>
+          {% for d in DAYS %}
+            <option value="{{ d }}" {% if d == today_name %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Category</label>
+        <select name="category" required>
+          <option value="Veg">🌱 Vegetarian Special</option>
+          <option value="Non-Veg">🍗 Non-Vegetarian Special</option>
+        </select>
+      </div>
+      <div>
+        <label>Meal Time</label>
+        <select name="meal" required>
+          <option value="lunch">☀️ Lunch</option>
+          <option value="dinner">🌙 Dinner</option>
+          <option value="breakfast">🌅 Breakfast</option>
+          <option value="snacks">☕ Evening Snacks</option>
+        </select>
+      </div>
+      <div>
+        <label>Additional Charge (₹)</label>
+        <input type="number" step="1" min="1" name="price" required placeholder="50">
+      </div>
+    </div>
+    <div class="form-row-align">
+      <div class="form-flex-input">
+        <label>Description / Note (Optional)</label>
+        <input type="text" name="description" placeholder="e.g. Served with raita and gravy">
+      </div>
+      <button type="submit" class="btn btn-primary nowrap">
+        Add Additional Item
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ADDITIONAL ITEMS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Scheduled Additional Food Items</h3>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Dish Name</th>
+          <th>Category</th>
+          <th>Day &amp; Meal</th>
+          <th>Charge</th>
+          <th>Student Opt-ins</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sp in specials %}
+          <tr>
+            <td>
+              <b>{{ sp.dish_name }}</b>
+              {% if sp.description %}
+                <div class="query-meta-time">{{ sp.description }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge {{ 'badge-veg' if sp.category == 'Veg' else 'badge-nonveg' }}">
+                {{ '🌱 Veg' if sp.category == 'Veg' else '🍗 Non-Veg' }}
+              </span>
+            </td>
+            <td>
+              <b>{{ sp.day if sp.day else 'Any Day' }}</b>
+              <div class="query-meta-time">{{ sp.meal|capitalize }}</div>
+            </td>
+            <td><b>₹{{ '%.0f'|format(sp.price) }}</b></td>
+            <td><span class="badge {{ 'badge-success' if sp.order_count > 0 else 'badge-neutral' }}">{{ sp.order_count }} Accepted</span></td>
+            <td>
+              <form method="post" action="{{ url_for('delete_special', sid=sp._id) }}" onsubmit="return confirm('Remove this additional food item?');" class="d-inline">
+                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="query-empty-state">No additional food items scheduled yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

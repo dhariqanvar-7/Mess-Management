@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Queries Portal — MessFlow{% endblock %}
+{% block section_name %}Admin / Queries Portal{% endblock %}
+
+{% block body %}
+<!-- HEADER & FILTER BUTTONS -->
+<div class="page-header-center">
+  <div>
+    <h1 class="page-title-sm">Student Queries &amp; Feedback</h1>
+    <p class="page-subtitle-sm">Review and respond to feedback submitted by hostel students.</p>
+  </div>
+  <div class="btn-group-sm">
+    <a href="{{ url_for('admin_complaints') }}" class="btn {{ 'btn-primary' if not status_filter else 'btn-secondary' }} btn-sm">All ({{ total_count }})</a>
+    <a href="{{ url_for('admin_complaints', status='Open') }}" class="btn {{ 'btn-primary' if status_filter == 'Open' else 'btn-secondary' }} btn-sm">Open ({{ open_count }})</a>
+    <a href="{{ url_for('admin_complaints', status='Resolved') }}" class="btn {{ 'btn-primary' if status_filter == 'Resolved' else 'btn-secondary' }} btn-sm">Resolved ({{ resolved_count }})</a>
+  </div>
+</div>
+
+<!-- COMPLAINTS LIST -->
+<div class="meal-list">
+  {% for c in items %}
+    <div class="card query-card-admin {{ 'query-card-admin-open' if c.status == 'Open' else '' }}">
+      <div class="query-card-header-wrap">
+        <div class="menu-day-wrap">
+          <span class="badge {{ 'badge-warn' if c.status == 'Open' else 'badge-success' }}">{{ '⏳ Open' if c.status == 'Open' else '✓ Resolved' }}</span>
+          <b>{{ c.type }}</b>
+          <span class="query-meta-time">by {{ c.name }} ({{ c.roll_no }})</span>
+        </div>
+        <span class="query-meta-time">{{ c.created.strftime('%d %b %Y, %I:%M %p') }}</span>
+      </div>
+
+      <p class="query-content-box">{{ c.text }}</p>
+
+      {% if c.status == 'Open' %}
+        <form method="post" action="{{ url_for('resolve', cid=c._id) }}" class="query-reply-form">
+          <input type="text" name="reply" required placeholder="Type reply &amp; corrective action taken..." class="flex-1">
+          <button type="submit" class="btn btn-primary btn-sm nowrap">Send Reply &amp; Resolve</button>
+        </form>
+      {% elif c.reply %}
+        <div class="query-reply-box">
+          <b>Admin Response:</b> {{ c.reply }}
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="card query-empty-state">
+      <h3>No queries found</h3>
+      <p class="query-meta-time">There are no student queries under this filter.</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

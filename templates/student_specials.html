@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Additional Food Items — MessFlow{% endblock %}
+{% block section_name %}Student / Additional Items{% endblock %}
+
+{% block body %}
+<!-- HEADER & STATS -->
+<div class="page-header-center">
+  <div>
+    <h1 class="page-title-sm">Additional Food Items &amp; Extras</h1>
+    <p class="page-subtitle-sm">Accept additional dishes at least 1 day prior. Rejections before 12h require reason &amp; admin approval; rejections within 12h are blocked.</p>
+  </div>
+  <div class="fee-summary-header">
+    <div class="fee-stat-badge-box">
+      <div>
+        <div class="fee-stat-label">Accepted</div>
+        <b class="fee-stat-value-primary">{{ accepted_count }} Items</b>
+      </div>
+      <div class="fee-stat-col">
+        <div class="fee-stat-label">Added Charge</div>
+        <b class="fee-stat-value">+₹{{ '%.0f'|format(accepted_total) }}</b>
+      </div>
+    </div>
+    <a href="{{ url_for('student_fees') }}" class="btn btn-primary btn-sm nowrap">View My Fee &rarr;</a>
+  </div>
+</div>
+
+<!-- ADDITIONAL ITEMS GRID -->
+<div class="specials-grid">
+  {% for sp in specials %}
+    <div class="card special-card {{ 'special-card-accepted' if sp.is_accepted else '' }}">
+      <div>
+        <div class="special-card-header">
+          <div>
+            <span class="badge {{ 'badge-veg' if sp.category == 'Veg' else 'badge-nonveg' }}">
+              {{ '🌱 Veg' if sp.category == 'Veg' else '🍗 Non-Veg' }}
+            </span>
+            <span class="badge badge-neutral">{{ sp.meal|capitalize }}</span>
+          </div>
+          <b class="special-price">₹{{ '%.0f'|format(sp.price) }}</b>
+        </div>
+        <h3 class="special-title">{{ sp.dish_name }}</h3>
+        {% if sp.description %}
+          <p class="special-description">{{ sp.description }}</p>
+        {% endif %}
+        <div class="special-day-meta">
+          Scheduled Day: <b>{{ sp.day if sp.day else 'Any Day' }}</b>
+        </div>
+      </div>
+      <div class="special-action-bar">
+        {% if sp.is_accepted %}
+          {% if sp.order and sp.order.status == 'Cancel Requested' %}
+            <div>
+              <span class="badge-pending">⏳ Rejection Pending Admin Approval</span>
+              <div class="cancel-reason-text"><b>Reason:</b> {{ sp.order.cancel_reason }}</div>
+            </div>
+          {% else %}
+            <div class="special-accepted-row">
+              <span class="badge badge-success">✓ Accepted (+₹{{ '%.0f'|format(sp.price) }})</span>
+              {% if sp.can_cancel %}
+                <form id="cancel-form-{{ sp._id }}" method="post" action="{{ url_for('cancel_special', sid=sp._id) }}" class="d-inline">
+                  <input type="hidden" name="reason" value="">
+                  <button type="button" class="btn btn-danger btn-sm nowrap" onclick="confirmReject('{{ sp._id }}')">
+                    Reject
+                  </button>
+                </form>
+              {% else %}
+                <span class="badge-locked">🔒 Cannot reject within 12h</span>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% else %}
+          {% if sp.can_accept %}
+            <form method="post" action="{{ url_for('accept_special', sid=sp._id) }}">
+              <button type="submit" class="btn btn-primary btn-sm w-full">
+                Accept for {{ sp.day if sp.day else 'this Day' }} (+₹{{ '%.0f'|format(sp.price) }})
+              </button>
+            </form>
+          {% else %}
+            <span class="badge-closed">Acceptance closed (must accept at least 1 day prior)</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="card query-empty-state">
+      <p>No additional food items scheduled currently.</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmReject(sid) {
+  var reason = prompt("Please provide a valid reason for rejecting this item:");
+  if (reason === null) return;
+  reason = reason.trim();
+  if (!reason) {
+    alert("A valid reason is required to reject.");
+    return;
+  }
+  var form = document.getElementById("cancel-form-" + sid);
+  if (form) {
+    form.querySelector("input[name='reason']").value = reason;
+    form.submit();
+  }
+}
+</script>
+{% endblock %}
