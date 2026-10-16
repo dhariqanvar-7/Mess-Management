@@ -61,14 +61,35 @@ A full-stack hostel mess management web application built with **Flask** and **M
 
 ---
 
-## 🔑 Demo Quick-Login Credentials
+## 🔑 Create Accounts
 
-| Role | Email | Password | Access Details |
-|---|---|---|---|
-| **👑 Admin** | `admin@mess.com` | `admin123` | Full administrative mess dashboard |
-| **🍗 Student (Non-Veg Plan)** | `arun@college.edu` | `student123` | Roll: 23CS101 (Non-veg plan enrolled) |
-| **🥗 Student (Pure Veg Plan)** | `priya@college.edu` | `student123` | Roll: 23CS102 (Pure vegetarian plan) |
-| **🍗 Student (Non-Veg Plan)** | `rahul@college.edu` | `student123` | Roll: 23EC205 (Non-veg plan enrolled) |
+The app does not create user accounts automatically. Use the script to create the initial admin and any student accounts in the same MongoDB database as the app. It refuses to overwrite a user with the same email or username.
+
+For an admin account, set:
+
+```text
+MONGO_URI
+ACCOUNT_ROLE=admin
+ACCOUNT_EMAIL
+ACCOUNT_USERNAME
+ACCOUNT_NAME
+```
+
+For a student account, set the same `ACCOUNT_*` variables, plus:
+
+```text
+ACCOUNT_ROLE=student
+STUDENT_ROLL_NO
+STUDENT_ROOM
+```
+
+`STUDENT_ROOM` is optional. The script prompts for the password without echoing it; it must be at least 12 characters. You can alternatively set `ACCOUNT_PASSWORD` in the environment for non-interactive use. In PowerShell, set the variables with `$env:VARIABLE_NAME = "value"` and run:
+
+```powershell
+py -3 bootstrap_admin.py
+```
+
+The script reads `MONGO_URI` from `.env` if it is not already set in the shell. Do not commit `.env` or put the admin password in source control.
 
 ---
 
@@ -83,10 +104,13 @@ A full-stack hostel mess management web application built with **Flask** and **M
 pip install -r requirements.txt
 ```
 
-### 3. Seed Database
+### 3. Create Accounts
+
 ```bash
-python seed_data.py
+python bootstrap_admin.py
 ```
+
+Set the account variables described above in your shell first; `MONGO_URI` can be loaded from `.env`. Run it once with `ACCOUNT_ROLE=admin` and again with `ACCOUNT_ROLE=student` to create both accounts.
 
 ### 4. Run Application
 ```bash
