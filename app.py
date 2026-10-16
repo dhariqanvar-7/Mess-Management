@@ -4,7 +4,10 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session
 from pymongo import MongoClient
 from bson import ObjectId
+from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "messflow-2026")
